@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package mqtt.broker;
+package mqtt.lele.logic;
 
 import java.awt.Robot;
 import java.awt.event.InputEvent;
@@ -25,40 +25,44 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
  *
  * @author Luca Coraci <luca.coraci@istc.cnr.it> ISTC-CNR
  */
-public class MqttBroker implements MqttCallback {
+public class MqttBroker_Lele_OLD implements MqttCallback {
 
-    private static MqttBroker _instance = null;
+    private static MqttBroker_Lele_OLD _instance = null;
     private Process mqtt = null;
-    private static final String TASKLIST = "tasklist";
-    private static final String KILL = "taskkill /F /IM ";
+    private static String PROCESS = "mosquitto";
+    private static final String TASKLIST = "ps -C " + PROCESS;
+    private static final String KILL = "pkill ";
 //    private List<MessageListener> listeners = new ArrayList<>();
     private String broker = "tcp://localhost:1883";
     private String clientId = "server";
     private boolean ignore = false;
     private MqttClient sampleClient = null;
 
-    public static MqttBroker getInstance() {
+    public static MqttBroker_Lele_OLD getInstance() {
         if (_instance == null) {
-            _instance = new MqttBroker();
+            _instance = new MqttBroker_Lele_OLD();
             return _instance;
         } else {
             return _instance;
         }
     }
 
-    private MqttBroker() {
+    private MqttBroker_Lele_OLD() {
         super();
     }
 
     public void connect() {
+        
+        
         try {
-            if (mqtt == null && !isProcessRunning("mosquitto.exe *32")) {
-                mqtt = Runtime.getRuntime().exec("./mosquitto/mosquitto.exe");
+            if (mqtt == null && !isProcessRunning(PROCESS)) {
+                mqtt = Runtime.getRuntime().exec(PROCESS);
                 System.out.println("MQTT connected");
                 System.out.println("subscribing all");
                 MemoryPersistence persistence = new MemoryPersistence();
                 try {
                     sampleClient = new MqttClient(broker, clientId, persistence);
+                    
                     MqttConnectOptions connOpts = new MqttConnectOptions();
                     connOpts.setCleanSession(true);
                     System.out.println("Connecting to broker: " + broker);
@@ -68,6 +72,8 @@ public class MqttBroker implements MqttCallback {
                     sampleClient.setCallback(_instance);
                     sampleClient.subscribe("chat");
                     sampleClient.subscribe("#");
+//                    sampleClient.disconnect();
+//                    mqtt = null;
                     System.out.println("Disconnected");
                 } catch (MqttException me) {
                     System.out.println("reason " + me.getReasonCode());
@@ -78,24 +84,32 @@ public class MqttBroker implements MqttCallback {
                     me.printStackTrace();
                 }
             }
-        } catch (IOException ex) {
-            Logger.getLogger(MqttBroker.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (IOException ex) {
+//            Logger.getLogger(MqttBroker_Lele_OLD.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Exception ex) {
-            Logger.getLogger(MqttBroker.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(MqttBroker_Lele_OLD.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     public void disconnect() {
-        try {
-            if (mqtt != null && isProcessRunning("mosquitto.exe")) {
-                killProcess("mosquitto.exe");
-                System.out.println("MQTT disconnected");
-            }
-        } catch (Exception ex) {
-            Logger.getLogger(MqttBroker.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        try {            
+            Runtime.getRuntime().exec(KILL + PROCESS);
+        } catch (IOException ex) {
+            Logger.getLogger(MqttBroker_Lele_OLD.class.getName()).log(Level.SEVERE, null, ex);
+        }  
     }
 
+    public void killProcess(String serviceName) {
+        try {
+            System.out.println("service name : " + serviceName);
+                    
+            Runtime.getRuntime().exec(KILL + serviceName);
+        } catch (IOException ex) {
+            Logger.getLogger(MqttBroker_Lele_OLD.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }    
+    
     public static boolean isProcessRunning(String serviceName) throws Exception {
 
         Process p = Runtime.getRuntime().exec(TASKLIST);
@@ -115,12 +129,7 @@ public class MqttBroker implements MqttCallback {
 
     }
 
-    public static void killProcess(String serviceName) throws Exception {
-        System.out.println("service name : " + serviceName);
 
-        Runtime.getRuntime().exec(KILL + serviceName);
-
-    }
 
     @Override
     public void connectionLost(Throwable thrwbl) {
