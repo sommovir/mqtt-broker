@@ -36,6 +36,7 @@ public class MqttBroker_Luca implements MqttCallback {
     private String clientId = "server";
     private boolean ignore = false;
     private MqttClient sampleClient = null;
+    private final String IM_ALIVE_TOPIC = "imalive";
 
     public static MqttBroker_Luca getInstance() {
         if (_instance == null) {
@@ -130,8 +131,15 @@ public class MqttBroker_Luca implements MqttCallback {
 
     @Override
     public void messageArrived(String topic, MqttMessage mm) throws Exception {
-        System.out.println("message received -> " + mm);
-        System.out.println("topic: " + topic);
+        String message = new String(mm.getPayload());
+        System.out.println("[Server][Message arrived]Topic: " + topic);
+        System.out.println("[Server][Message arrived]Message: " + message);
+
+        if (topic.equals(IM_ALIVE_TOPIC)) {
+            String client_id = message;
+            this.publish(client_id, "Hello dear "+client_id);
+            System.out.println("message sent on topic: "+client_id);
+        }
        
     }
 
@@ -139,8 +147,9 @@ public class MqttBroker_Luca implements MqttCallback {
     public void deliveryComplete(IMqttDeliveryToken imdt) {
         System.out.println("delivery complete");
     }
-    
-    public void publish(String topic, String message) throws MqttException{
+
+    public synchronized void publish(String topic, String message) throws MqttException {
+//        int t = 1;
         sampleClient.publish(topic, new MqttMessage(message.getBytes()));
     }
 
