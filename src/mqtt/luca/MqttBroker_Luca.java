@@ -91,6 +91,7 @@ public class MqttBroker_Luca implements MqttCallback {
             if (mqtt != null && isProcessRunning("mosquitto.exe")) {
                 killProcess("mosquitto.exe");
                 System.out.println("MQTT disconnected");
+                mqtt = null;
             }
         } catch (Exception ex) {
             Logger.getLogger(MqttBroker_Luca.class.getName()).log(Level.SEVERE, null, ex);
